@@ -1,4 +1,6 @@
 import AWSIoTPythonSDK
+import getopt
+import sys
 import time
 from classes import buildpoint
 
@@ -58,9 +60,23 @@ def set_leds(toValues):
     #TODO: Import Raspberry Pi library and do stuff
     return
 
-def main():
+"""
+This prints the commandline usage statement
+"""
+def print_usage():
+    print("Usage: python3 main.py --clientid=<client id> --endpoint=<aws endpoint> --cacert=<path to ca cert> --privatekey=<path to private key> --cert=<path to cert>")
+    print("       -i  --clientid     The ClientID of this node in AWS IoT")
+    print("       -e  --endpoint     The AWS IoT endpoint url")
+    print("       -a  --cacert       The path to the AWS IoT CA Cert")
+    print("       -p  --privatekey   The path to the AWS IoT Private Key for this thing")
+    print("       -c  --cert         The path to the AWS IoT Cert for this thing")
+
+def main(clientid, endpoint, cacertpath, privatekeypath, certpath):
     # Create the AWS IoT Connection
+
     # Setup Listeners
+    
+    
     # Start wait screen
     while(True):
         if (waiting > 0):
@@ -73,4 +89,39 @@ def main():
 
 # Entry Point
 if __name__ == "__main__":
-    main()
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "hi:e:a:p:c:", [ "help", "clientid=", "endpoint=", "cacert=", "privatekey=", "cert=" ])
+    except getopt.GetoptError as err:
+        print(err)
+        print_usage()
+        sys.exit(2)
+
+    clientid = None 
+    endpoint = None
+    cacertpath = None
+    privatekeypath = None
+    certpath = None
+
+    for key, value in opts:
+        if key in ("-i", "--clientid"):
+            clientid = value
+        elif key in ("-e", "--endpoint"):
+            endpoint = value
+        elif key in ("-a", "--cacert"):
+            cacertpath = value
+        elif key in ("-p", "--privatekey"):
+            privatekeypath = value
+        elif key in ("-c", "--cert"):
+            certpath = value
+        elif key in ("-h", "--help"):
+            print_usage()
+            sys.exit(0)
+        else:
+            assert False, "Unhandled Option"
+    
+    if None in (clientid, endpoint, cacertpath, privatekeypath, certpath):
+        print("Error: Missing argument")
+        print_usage()
+        sys.exit(2)
+
+    main(clientid, endpoint, cacertpath, privatekeypath, certpath)
