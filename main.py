@@ -85,6 +85,7 @@ def setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpat
 Receives a packet from MQTT and processes it accordingly
 """
 def mqtt_receive(client, userdata, message):
+    print("Received Message")
     payload = json.loads(message["payload"])
     build_id = payload["buildId"]
     status = payload["status"]
@@ -103,6 +104,7 @@ Clears the Build List, Reset LED strip to waiting
 """
 def process_reset(build_id):
     global builds, waiting
+    print("Processing Reset")
     builds.clear()
     waiting = 0
 
@@ -111,6 +113,7 @@ Adds a build to the LED strip
 """
 def process_create(build_id):
     global builds, waiting
+    print("Processing Create ({0})" % build_id)
     builds[build_id] = buildpoint.BuildPoint(build_id, 100)
     waiting = 0
 
@@ -119,6 +122,7 @@ Removes a build from the list, sets success pattern
 """
 def process_succeed(build_id):
     global builds, waiting, timing_counter, background_color_active
+    print("Processing Succeed ({0})" % build_id)
     builds.popitem(build_id)
     background_color_active = background_color_success
     timing_counter = 20
@@ -128,6 +132,7 @@ Removes a build from the list, sets the failure pattern
 """
 def process_fail(build_id):
     global builds, waiting, timing_counter, background_color_active
+    print("Processing Fail ({0})" % build_id)
     builds.popitem(build_id)
     background_color_active = background_color_failure
     timing_counter = 20
@@ -147,7 +152,9 @@ def main(clientid, endpoint, cacertpath, privatekeypath, certpath):
     global timing_counter, background_color_active, waiting
 
     # Create the AWS IoT Connection
+    print("Setting up IoT connection...")
     setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath)
+    print("IoT Connection Setup Complete.")
 
     # Setup Listeners
     
