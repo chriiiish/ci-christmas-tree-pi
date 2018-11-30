@@ -111,7 +111,7 @@ Adds a build to the LED strip
 """
 def process_create(build_id):
     global builds, waiting
-    builds[build_id] = buildpoint(build_id, 100)
+    builds[build_id] = buildpoint.BuildPoint(build_id, 100)
     waiting = 0
 
 """
@@ -129,7 +129,7 @@ Removes a build from the list, sets the failure pattern
 def process_fail(build_id):
     global builds, waiting, timing_counter, background_color_active
     builds.popitem(build_id)
-    backgorund_color_active = background_color_failure
+    background_color_active = background_color_failure
     timing_counter = 20
 
 """
