@@ -1,5 +1,7 @@
 import AWSIoTPythonSDK
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 import getopt
+import json
 import sys
 import time
 from classes import buildpoint
@@ -15,7 +17,9 @@ max_leds = 100
 
 # This changes during programming execution
 background_color_active = background_color_build # This changes
-builds = []
+builds = {}
+mqttClient=None
+timing_counter = 0
 waiting = 1 # 0 = builds running, 1 + 2 = used to generate "waiting" pattern, 3 = don't show build points
 
 
@@ -61,6 +65,64 @@ def set_leds(toValues):
     return
 
 """
+This sets up the connection to AWS IoT
+"""
+def setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath):
+    global mqttClient
+    mqttClient = AWSIoTMQTTClient(clientid)
+    mqttClient.configureEndpoint(endpoint, 8883)
+    mqttClient.configureCredentials(cacertpath, privatekeypath, certpath)
+
+    mqttClient.configureOfflinePublishQueueing(-1)
+    mqttClient.configureDrainingFrequency(2)
+    mqttClient.configureConnectDisconnectTimeout(10)
+    mqttClient.configureMQTTOperationTimeout(5)
+
+    mqttClient.connect()
+    mqttClient.subscribe("buildmasterchristmastree", 1, mqtt_receive)
+
+"""
+Receives a packet from MQTT and processes it accordingly
+"""
+def mqtt_receive(client, userdata, message):
+    payload = json.loads(message["payload"])
+    build_id = payload["buildId"]
+    status = payload["status"]
+
+    functions = {
+        0: process_reset,
+        1: process_create,
+        2: process_succeed,
+        3: process_fail
+    }
+
+    functions[status](build_id)
+
+"""
+Clears the Build List, Reset LED strip to waiting
+"""
+def process_reset(build_id):
+    return
+
+"""
+Adds a build to the LED strip
+"""
+def process_create(build_id):
+    return
+
+"""
+Removes a build from the list, sets success pattern
+"""
+def process_succeed(build_id):
+    return
+
+"""
+Removes a build from the list, sets the failure pattern
+"""
+def process_fail(build_id):
+    return
+
+"""
 This prints the commandline usage statement
 """
 def print_usage():
@@ -72,19 +134,32 @@ def print_usage():
     print("       -c  --cert         The path to the AWS IoT Cert for this thing")
 
 def main(clientid, endpoint, cacertpath, privatekeypath, certpath):
+    global timing_counter, background_color_active, waiting
+
     # Create the AWS IoT Connection
+    setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath)
 
     # Setup Listeners
     
     
     # Start wait screen
-    while(True):
-        if (waiting > 0):
-            set_leds(waiting_pattern())
-        else:
-            set_leds(build_pattern())
-        
-        time.sleep(0.1)
+    try:
+        while(True):
+            if (timing_counter == 0):
+                background_color_active = background_color_build
+                waiting = 0 if (len(builds) > 0) else 1
+                timing_counter = -1
+            else:
+                timing_counter -= 1
+
+            if (waiting > 0):
+                set_leds(waiting_pattern())
+            else:
+                set_leds(build_pattern())
+            
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        mqttClient.disconnect()
     return
 
 # Entry Point
