@@ -102,25 +102,35 @@ def mqtt_receive(client, userdata, message):
 Clears the Build List, Reset LED strip to waiting
 """
 def process_reset(build_id):
-    return
+    global builds, waiting
+    builds.clear()
+    waiting = 0
 
 """
 Adds a build to the LED strip
 """
 def process_create(build_id):
-    return
+    global builds, waiting
+    builds[build_id] = buildpoint(build_id, 100)
+    waiting = 0
 
 """
 Removes a build from the list, sets success pattern
 """
 def process_succeed(build_id):
-    return
+    global builds, waiting, timing_counter, background_color_active
+    builds.popitem(build_id)
+    background_color_active = background_color_success
+    timing_counter = 20
 
 """
 Removes a build from the list, sets the failure pattern
 """
 def process_fail(build_id):
-    return
+    global builds, waiting, timing_counter, background_color_active
+    builds.popitem(build_id)
+    backgorund_color_active = background_color_failure
+    timing_counter = 20
 
 """
 This prints the commandline usage statement
