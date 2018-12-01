@@ -69,7 +69,7 @@ Receives a packet from MQTT and processes it accordingly
 def mqtt_receive(client, userdata, message):
     print("Received Message")
     try:
-        payload = json.loads(str(message.payload))
+        payload = json.loads(message.payload.decode('utf-8'))
         build_id = payload["buildId"]
         status = payload["status"]
 
@@ -82,7 +82,8 @@ def mqtt_receive(client, userdata, message):
 
         functions[status](str(build_id))
     except Exception as err:
-        print("Error Receiving Message: {0} {1}".format(err, err.with_traceback))
+        print("Error Receiving Message: {0} {1}".format(err, str(err.with_traceback)))
+        print("PAYLOAD: {0}".format(str(message.payload)))
 
 """
 Clears the Build List, Reset LED strip to waiting
@@ -120,7 +121,7 @@ def process_fail(build_id):
     global builds, notification
     print("Processing Fail ({0})".format(build_id))
     if build_id in builds:
-        builds.remove()
+        builds.remove(build_id)
     notification["color"] = colors["fail"]
     notification["count"] = hold_time / frame_rate
 
