@@ -82,7 +82,8 @@ def mqtt_receive(client, userdata, message):
 
         functions[status](str(build_id))
     except Exception as err:
-        print("Error Receiving Message: {0} {1}".format(err, err.with_traceback))
+        print("Error Receiving Message: {0} {1}".format(err, str(err.with_traceback)))
+        print("PAYLOAD: {0}".format(str(message.payload)))
 
 """
 Clears the Build List, Reset LED strip to waiting
@@ -98,15 +99,9 @@ def process_reset(build_id):
 Adds a build to the LED strip
 """
 def process_create(build_id):
-<<<<<<< HEAD
-    global builds, waiting
-    builds[build_id] = buildpoint.BuildPoint(build_id, 100)
-    waiting = 0
-=======
     global builds
     print("Processing Create ({0})".format(build_id))
     builds.append(build_id)
->>>>>>> 2d8f5bdc9ae96132077b236a474e022c2826b321
 
 """
 Removes a build from the list, sets success pattern
