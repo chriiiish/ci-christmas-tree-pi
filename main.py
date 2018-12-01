@@ -52,8 +52,8 @@ def build_pattern():
         led_strip[i] = background_color_active
     
     if waiting != 3:
-        for build in builds:
-            led_strip[build.getAndSetNextPoint(max_leds)] = foreground_color_point
+        for build_id in builds:
+            led_strip[builds[build_id].getAndSetNextPosition(max_leds)] = foreground_color_point
     
     return led_strip
 
@@ -123,7 +123,8 @@ Removes a build from the list, sets success pattern
 def process_succeed(build_id):
     global builds, waiting, timing_counter, background_color_active
     print("Processing Succeed ({0})".format(build_id))
-    builds.popitem(build_id)
+    if build_id in builds:
+        del builds[build_id]
     background_color_active = background_color_success
     timing_counter = 20
 
@@ -133,7 +134,8 @@ Removes a build from the list, sets the failure pattern
 def process_fail(build_id):
     global builds, waiting, timing_counter, background_color_active
     print("Processing Fail ({0})".format(build_id))
-    builds.popitem(build_id)
+    if build_id in builds:
+        del builds[build_id]
     background_color_active = background_color_failure
     timing_counter = 20
 
