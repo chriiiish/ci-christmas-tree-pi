@@ -72,17 +72,17 @@ def mqtt_receive(client, userdata, message):
         payload = json.loads(str(message.payload))
         build_id = payload["buildId"]
         status = payload["status"]
+
+        functions = {
+            0: process_reset,
+            1: process_create,
+            2: process_succeed,
+            3: process_fail
+        }
+
+        functions[status](str(build_id))
     except Exception as err:
         print("Error Receiving Message: {0} {1}".format(err, err.with_traceback))
-
-    functions = {
-        0: process_reset,
-        1: process_create,
-        2: process_succeed,
-        3: process_fail
-    }
-
-    functions[status](str(build_id))
 
 """
 Clears the Build List, Reset LED strip to waiting
