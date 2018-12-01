@@ -68,9 +68,12 @@ Receives a packet from MQTT and processes it accordingly
 """
 def mqtt_receive(client, userdata, message):
     print("Received Message")
-    payload = json.loads(message.payload)
-    build_id = payload["buildId"]
-    status = payload["status"]
+    try:
+        payload = json.loads(str(message.payload))
+        build_id = payload["buildId"]
+        status = payload["status"]
+    except Exception as err:
+        print("Error Receiving Message: {0} {1}".format(err, err.with_traceback))
 
     functions = {
         0: process_reset,
