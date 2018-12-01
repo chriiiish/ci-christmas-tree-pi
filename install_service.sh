@@ -4,6 +4,7 @@
 if [ -z "$1" ] || [ $1 == "-h" ] || [ $1 == "--help" ]
     then
         echo "Usage: sudo install_service.sh /path/to/code"
+	echo "       IMPORTANT - do not include a trailing slash"
         exit
 fi
 
@@ -30,7 +31,7 @@ systemctl enable ci-christmas-tree
 
 # Start the service
 systemctl start ci-christmas-tree
-echo "Please hold... Service Starting..."
+echo "Please hold... Service Starting... (approx 35 sec wait time)"
 
 # Delay here while the ci christmas tree starts (approx 35 sec)
 sleep 35s
