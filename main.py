@@ -4,58 +4,27 @@ import getopt
 import json
 import sys
 import time
-from classes import buildpoint
 
 # Static Stuff
-background_color_success = [ 255, 0, 0 ]    # RGB Green (Static)
-background_color_failure = [ 0, 255, 0 ]    # RGB Red (Static)
-background_color_build = [ 0, 0, 255 ]      # RGB Blue (Static)
-foreground_color_point = [ 255, 255, 255 ]  # RGB White (Static)
-foreground_color_red = [ 255, 0, 0 ]        # RGB Green (Static)
-foreground_color_green = [ 0, 255, 0 ]      # RGB Red (Static)
-max_leds = 100
+colors = {}
+colors["succeed"] = (0,255,0) # RGB
+colors["fail"] = (255,0,0) # RGB
+colors["pattern_primary"] = (255,0,0) # RGB
+colors["pattern_secondary"] = (0,255,0) # RGB
+num_leds = 100
+alternate_every = 4
+frame_rate = 0.05 # seconds per frame
+hold_time = 1 # seconds
 
 # This changes during programming execution
-background_color_active = background_color_build # This changes
-builds = {}
+internal_leds = []
+builds = []
 mqttClient=None
-timing_counter = 0
-waiting = 1 # 0 = builds running, 1 + 2 = used to generate "waiting" pattern, 3 = don't show build points
+notification = {
+    "count": 0,
+    "color": (0,0,0)
+}
 
-
-"""
-This generates one frame of waiting colours
-returns { 1:[R,G,B], 2:[R,G,B], ..., max:[R,G,B] }
-"""
-def waiting_pattern():
-    global waiting
-
-    led_strip = {}
-    start = waiting
-    for i in range(0, max_leds):
-        led_color = foreground_color_green if start == 1 else foreground_color_red
-        led_strip[i] = led_color
-        start = 2 if start == 1 else 1
-
-    if waiting in (1,2):
-        waiting = 2 if waiting == 1 else 1
-
-    return led_strip
-
-"""
-This generates one frame of build pattern
-returns { 1:[R,G,B], 2:[R,G,B], ..., max:[R,G,B] }
-"""
-def build_pattern():
-    led_strip = {}
-    for i in range(0, max_leds):
-        led_strip[i] = background_color_active
-    
-    if waiting != 3:
-        for build_id in builds:
-            led_strip[builds[build_id].getAndSetNextPosition(max_leds)] = foreground_color_point
-    
-    return led_strip
 
 """
 This sets the LEDS on the strip
@@ -64,10 +33,18 @@ def set_leds(toValues):
     #TODO: Import Raspberry Pi library and do stuff
     return
 
+
+"""
+This sets all the LEDs to a particular color
+"""
+def set_leds_notification(color):
+    #TODO: Import Raspberry Pi library and do stuff
+    return
+
 """
 This sets up the connection to AWS IoT
 """
-def setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath):
+def setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath, topic):
     global mqttClient
     mqttClient = AWSIoTMQTTClient(clientid)
     mqttClient.configureEndpoint(endpoint, 8883)
@@ -79,7 +56,7 @@ def setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpat
     mqttClient.configureMQTTOperationTimeout(5)
 
     mqttClient.connect()
-    mqttClient.subscribe("buildmasterchristmastree", 1, mqtt_receive)
+    mqttClient.subscribe(topic, 1, mqtt_receive)
 
 """
 Receives a packet from MQTT and processes it accordingly
@@ -103,80 +80,82 @@ def mqtt_receive(client, userdata, message):
 Clears the Build List, Reset LED strip to waiting
 """
 def process_reset(build_id):
-    global builds, waiting
+    global builds, notification
     print("Processing Reset")
     builds.clear()
-    waiting = 0
+    notification["color"] = (0,0,0)
+    notification["count"] = 0
 
 """
 Adds a build to the LED strip
 """
 def process_create(build_id):
-    global builds, waiting
+    global builds
     print("Processing Create ({0})".format(build_id))
-    builds[build_id] = buildpoint.BuildPoint(build_id, 100)
-    waiting = 0
+    builds.append(build_id)
 
 """
 Removes a build from the list, sets success pattern
 """
 def process_succeed(build_id):
-    global builds, waiting, timing_counter, background_color_active
+    global builds, notification
     print("Processing Succeed ({0})".format(build_id))
     if build_id in builds:
-        del builds[build_id]
-    background_color_active = background_color_success
-    timing_counter = 20
+        builds.remove(build_id)
+    notification["color"] = colors["succeed"]
+    notification["count"] = hold_time / frame_rate
 
 """
 Removes a build from the list, sets the failure pattern
 """
 def process_fail(build_id):
-    global builds, waiting, timing_counter, background_color_active
+    global builds, notification
     print("Processing Fail ({0})".format(build_id))
     if build_id in builds:
-        del builds[build_id]
-    background_color_active = background_color_failure
-    timing_counter = 20
+        builds.remove()
+    notification["color"] = colors["fail"]
+    notification["count"] = hold_time / frame_rate
 
 """
 This prints the commandline usage statement
 """
 def print_usage():
-    print("Usage: python3 main.py --clientid=<client id> --endpoint=<aws endpoint> --cacert=<path to ca cert> --privatekey=<path to private key> --cert=<path to cert>")
+    print("Usage: python3 main.py --clientid=<client id> --endpoint=<aws endpoint> --cacert=<path to ca cert> --privatekey=<path to private key> --cert=<path to cert> --topic=<mqtt topic>")
     print("       -i  --clientid     The ClientID of this node in AWS IoT")
     print("       -e  --endpoint     The AWS IoT endpoint url")
     print("       -a  --cacert       The path to the AWS IoT CA Cert")
     print("       -p  --privatekey   The path to the AWS IoT Private Key for this thing")
     print("       -c  --cert         The path to the AWS IoT Cert for this thing")
+    print("       -t  --topic        The MQTT topic to listen for commands on")
 
-def main(clientid, endpoint, cacertpath, privatekeypath, certpath):
-    global timing_counter, background_color_active, waiting
+def main(clientid, endpoint, cacertpath, privatekeypath, certpath, topic):
+    global internal_leds, notification
 
     # Create the AWS IoT Connection
     print("Setting up IoT connection...")
-    setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath)
+    setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath, topic)
     print("IoT Connection Setup Complete.")
 
-    # Setup Listeners
-    
-    
+    # Create the LED pattern
+    for led_block in range(0, int(num_leds/alternate_every)):
+        for led in range(0, alternate_every):
+            internal_leds.append( colors["pattern_primary"] if led_block % 2 == 0 else colors["pattern_secondary"] )
+
     # Start wait screen
     try:
         while(True):
-            if (timing_counter == 0):
-                background_color_active = background_color_build
-                waiting = 0 if (len(builds) > 0) else 1
-                timing_counter = -1
+            if notification["count"] > 0:
+                print("notification {0} {1}".format(notification["color"], notification["count"]) )
+                set_leds_notification(notification["color"])
+                notification["count"] -= 1
             else:
-                timing_counter -= 1
+                set_leds(internal_leds)
+                if len(builds) > 0:
+                    print("builds active: {0}".format(len(builds)))
+                    start_led = internal_leds.pop(0)
+                    internal_leds.append(start_led)
 
-            if (waiting > 0):
-                set_leds(waiting_pattern())
-            else:
-                set_leds(build_pattern())
-            
-            time.sleep(0.1)
+            time.sleep(frame_rate)
     except KeyboardInterrupt:
         mqttClient.disconnect()
     return
@@ -184,7 +163,7 @@ def main(clientid, endpoint, cacertpath, privatekeypath, certpath):
 # Entry Point
 if __name__ == "__main__":
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hi:e:a:p:c:", [ "help", "clientid=", "endpoint=", "cacert=", "privatekey=", "cert=" ])
+        opts, args = getopt.getopt(sys.argv[1:], "hi:e:a:p:c:t:", [ "help", "clientid=", "endpoint=", "cacert=", "privatekey=", "cert=", "topic=" ])
     except getopt.GetoptError as err:
         print(err)
         print_usage()
@@ -195,6 +174,7 @@ if __name__ == "__main__":
     cacertpath = None
     privatekeypath = None
     certpath = None
+    topic = None
 
     for key, value in opts:
         if key in ("-i", "--clientid"):
@@ -210,6 +190,8 @@ if __name__ == "__main__":
         elif key in ("-h", "--help"):
             print_usage()
             sys.exit(0)
+        elif key in ("-t", "--topic"):
+            topic = value
         else:
             assert False, "Unhandled Option"
     
@@ -218,4 +200,4 @@ if __name__ == "__main__":
         print_usage()
         sys.exit(2)
 
-    main(clientid, endpoint, cacertpath, privatekeypath, certpath)
+    main(clientid, endpoint, cacertpath, privatekeypath, certpath, topic)
