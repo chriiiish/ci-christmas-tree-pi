@@ -121,7 +121,7 @@ def process_fail(build_id):
     global builds, notification
     print("Processing Fail ({0})".format(build_id))
     if build_id in builds:
-        builds.remove()
+        builds.remove(build_id)
     notification["color"] = colors["fail"]
     notification["count"] = hold_time / frame_rate
 
