@@ -69,7 +69,7 @@ Receives a packet from MQTT and processes it accordingly
 def mqtt_receive(client, userdata, message):
     print("Received Message")
     try:
-        payload = json.loads(str(message.payload))
+        payload = json.loads(message.payload.decode('utf-8'))
         build_id = payload["buildId"]
         status = payload["status"]
 
