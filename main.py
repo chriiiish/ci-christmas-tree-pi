@@ -1,5 +1,7 @@
 import AWSIoTPythonSDK
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
+import board
+import neopixel
 import getopt
 import json
 import sys
@@ -24,22 +26,25 @@ notification = {
     "count": 0,
     "color": (0,0,0)
 }
+pixels = None
 
 
 """
 This sets the LEDS on the strip
 """
 def set_leds(toValues):
-    #TODO: Import Raspberry Pi library and do stuff
-    return
-
+    global pixels
+    for led_number in range(0, len(internal_leds)):
+        pixels[led_number] = internal_leds[led_number]
+    pixels.show()
 
 """
 This sets all the LEDs to a particular color
 """
 def set_leds_notification(color):
-    #TODO: Import Raspberry Pi library and do stuff
-    return
+    global pixels
+    pixels.fill(color)
+    pixels.show()
 
 """
 This sets up the connection to AWS IoT
@@ -129,12 +134,15 @@ def print_usage():
     print("       -t  --topic        The MQTT topic to listen for commands on")
 
 def main(clientid, endpoint, cacertpath, privatekeypath, certpath, topic):
-    global internal_leds, notification
+    global internal_leds, notification, pixels
 
     # Create the AWS IoT Connection
     print("Setting up IoT connection...")
     setup_iot_connection(clientid, endpoint, cacertpath, privatekeypath, certpath, topic)
     print("IoT Connection Setup Complete.")
+
+    # Setup NeoPixels
+    pixels = neopixel.NeoPixel(board.D18, num_leds, brightness=0.2, auto_write=False)
 
     # Create the LED pattern
     for led_block in range(0, int(num_leds/alternate_every)):
