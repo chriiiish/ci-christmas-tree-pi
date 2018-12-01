@@ -97,7 +97,7 @@ def mqtt_receive(client, userdata, message):
         3: process_fail
     }
 
-    functions[status](build_id)
+    functions[status](str(build_id))
 
 """
 Clears the Build List, Reset LED strip to waiting
@@ -113,7 +113,7 @@ Adds a build to the LED strip
 """
 def process_create(build_id):
     global builds, waiting
-    print("Processing Create ({0})" % build_id)
+    print("Processing Create ({0})".format(build_id))
     builds[build_id] = buildpoint.BuildPoint(build_id, 100)
     waiting = 0
 
@@ -122,7 +122,7 @@ Removes a build from the list, sets success pattern
 """
 def process_succeed(build_id):
     global builds, waiting, timing_counter, background_color_active
-    print("Processing Succeed ({0})" % build_id)
+    print("Processing Succeed ({0})".format(build_id))
     builds.popitem(build_id)
     background_color_active = background_color_success
     timing_counter = 20
@@ -132,7 +132,7 @@ Removes a build from the list, sets the failure pattern
 """
 def process_fail(build_id):
     global builds, waiting, timing_counter, background_color_active
-    print("Processing Fail ({0})" % build_id)
+    print("Processing Fail ({0})".format(build_id))
     builds.popitem(build_id)
     background_color_active = background_color_failure
     timing_counter = 20
