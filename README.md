@@ -58,14 +58,6 @@ In this example, we have downloaded all the certificates to `/home/pi/Documents/
 * Your IoT Topic that you're listening on (e.g. mytree)
 * Your AWS IoT endpoint (e.g. asdajsdlasoq-ats.iot.us-east-1.amazonaws.com)
 
-Copy the run_example.sh file to run.sh and make it executable
-
-```bash
-cd /home/pi/Documents/ci-christmas-tree-pi
-cp run_example.sh run.sh
-sudo chmod u+x run.sh
-```
-
 Now go through the run.sh file and change the parameters to the ones you need. In the end you should have a file that looks like this:
 
 ```
