@@ -41,7 +41,7 @@ sudo chmod u+x install_service.sh
 sudo cp run_example.sh run.sh
 sudo chmod u+x run.sh
 
-sudo ./install_service.sh
+sudo ./install_service.sh /home/pi/Documents/ci-christmas-tree-pi
 ```
 
 ---
