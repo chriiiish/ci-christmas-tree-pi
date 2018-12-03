@@ -5,6 +5,18 @@ This connects to AWS IoT to receive commands
 
 ---
 
+Hardware
+========
+
+Minimum Hardware (based on what I'm using):
+* Raspberry Pi (Zero W)
+* Neopixel LED strip (5V)
+
+If you've got a lot of LEDs ( < 8 LEDs ):
+* a 5V 3A+ Power Supply
+
+---
+
 Installation
 ============
 To install this on a raspberry pi, clone the repository into a folder of your choosing, here we're going to clone it into the documents:
