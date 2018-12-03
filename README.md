@@ -76,12 +76,19 @@ sleep 30s
 python3 /home/pi/Documents/ci-christmas-tree-pi/main.py --clientid=pi001 --endpoint=myendpoint-ats.iot.ap-southeast-2.amazonaws.com --cacert=/home/pi/Documents/private/AmazonRootCA1.pem --privatekey=/home/pi/Documents/private/deviceid-private.pem.key --cert=/home/pi/Documents/private/deviceid-certificate.pem.crt --topic=mytree
 ```
 
-At this point we can go and install the service, which is what we will use to control the tree
+In the top of main.py, configure your LED strip. Set the colors (if you want), the **number of leds**, etc.
 
-```bash
-cd /home/pi/Documents/ci-christmas-tree-pi
-sudo chmod u+x install_service.sh
-sudo ./install_service.sh /home/pi/Documents/ci-christmas-tree-pi
+```python
+# Static Stuff
+colors = {}
+colors["succeed"] = (0,255,0) # RGB
+colors["fail"] = (255,0,0) # RGB
+colors["pattern_primary"] = (255,0,0) # RGB
+colors["pattern_secondary"] = (0,255,0) # RGB
+num_leds = 100
+alternate_every = 4
+frame_rate = 0.05 # seconds per frame
+hold_time = 1 # seconds
 ```
 
 ---
